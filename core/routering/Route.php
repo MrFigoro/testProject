@@ -2,114 +2,98 @@
 
 namespace core\routering;
 
+use ReflectionClass;
+
 class Route
 {
-    static function start()
+
+    static function find()
     {
-        // модель, контроллер и действие по-умолчанию
-        $modelName = 'Home';
-        $controllerAction = 'HomeController@index';
-
+        $route = null;
+        $className = null;
         $routes = require_once('../routes/web.php');
-        $route = $_SERVER['REQUEST_URI'];
+        $currentURL = $_SERVER['REQUEST_URI'];
 
-        if (array_key_exists($route, $routes)) {
-            $controllerAction = $routes[$route];
+        if (array_key_exists($currentURL, $routes)) {
+            $route = $currentURL;
         } else {
-            //извлекаю все ключи файла роутов (все роуты)
-            $keysRoutes = array_keys($routes);
-
-            //разбиваю полученный роут по /
-            $sRoute = explode('/', $route);
-
-            //разбиваю каждый роут в массиве ключей роутов и сравниваю длину полученного массива с длиной искомого
-            foreach ($keysRoutes as $keysRoute) {
-                $keyArray = explode('/', $keysRoute);
-                if (count($keyArray) == count($sRoute)) {
-                    //если длины равны, то сохраняю элементы, которые отличаются ;)
-                    $keyV = array_diff($keyArray, $sRoute);
-                    foreach ($keyV as &$el) {
-                        $el = trim($el, '{}'); //обрезал фигурные скобки
+            $countParamURL = count(explode('/', $currentURL));
+            foreach (array_keys($routes) as $key) {
+                $countParamsRoute = count(explode('/', $key));
+                if ($countParamsRoute == $countParamURL) {
+                    $quotedKey = str_replace('/', '\/', $key);
+                    $regex = '/'.preg_replace('/{[^}]{1,}}/', '[^\/]{1,}', $quotedKey).'\z/';
+                    if (preg_match($regex, $currentURL,$matches)) {
+                        $route = $key;
+                        break;
                     }
-                    unset($el); //обязательно надо убирать более неиспользуемую переменную
-                    $values = array_diff($sRoute, $keyArray); //получил массив отличающихся значений
-                    $params = array_combine($keyV, $values); //получил массив - назв. параметра и полученное значение
-                    var_dump($params);
-                    var_dump($routes[$keysRoute]);
-                    exit;
-
-                    // далее через reflections надо вызвать метод контроллера
-                    $controllerAction = $routes[$route];
                 }
             }
         }
-
-
-
-
-
-        var_dump(array_key_exists($route, $routes));
-        exit;
-
-        $routes = explode('/', $_SERVER['REQUEST_URI']);
-
-
-
-        // именование контроллера
-        $controllerName = $modelName.'Controller';
-
-        // действие контроллера
-        // $actionName;
-
-        // включение файла с классом модели (файла модели может и не быть)
-        $modelFile = ucfirst(strtolower($modelName)).'.php';
-        $modelPath = "app/models/".$modelFile;
-        if(file_exists($modelPath))
-        {
-            include "app/models/".$modelFile;
+        var_dump($route);
+        if (!is_null($route)) {
+            $classAction = explode('@' ,$routes[$route]);
+            if (count($classAction) == 2 ) {
+                return self::dispatch($classAction[0], $classAction[1], self::prepareParams($route, $currentURL));
+            }
         }
-
-        // включение файла с классом контроллера
-        $controllerFile = ucfirst(strtolower($controllerName)).'.php';
-        $controllerPath = "app/controllers/".$controllerFile;
-//        var_dump(file_exists($controllerPath));
-//        die();
-        if(file_exists($controllerPath))
-        {
-            include "app/controllers/".$controllerFile;
-        }
-        else
-        {
-            /*
-            правильно было бы кинуть здесь исключение,
-            но для упрощения сразу сделаем редирект на страницу 404
-            */
-            Route::ErrorPage404();
-        }
-
-//        var_dump($controllerName);
-//        var_dump($actionName);
-//        var_dump($_SERVER['HTTP_HOST']);
-//        die();
-
-        // создаем контроллер
-        $controller = new $controllerName;
-        $action = $actionName;
-
-        if(method_exists($controller, $action))
-        {
-            // вызываем действие контроллера
-            $controller->$action();
-        }
-        else
-        {
-            // здесь также разумнее было бы кинуть исключение
-            Route::ErrorPage404();
-        }
-
+        return self::errorPage404();
     }
 
-    static function ErrorPage404()
+    static function prepareParams(string $route, string $url)
+    {
+        $routeArray = explode('/', $route);
+        $urlArray = explode('/', $url);
+        // сохраняю ключи, которые отличаются ;)
+        $keyV = array_diff($routeArray, $urlArray);
+        foreach ($keyV as &$el) {
+            $el = trim($el, '{}'); //обрезал фигурные скобки
+        }
+        unset($el); //обязательно надо убирать более неиспользуемую переменную
+        $values = array_diff($urlArray, $routeArray); //получил массив отличающихся значений
+        $params = array_combine($keyV, $values); //получил массив - назв. параметра и полученное значение
+        return $params;
+    }
+
+    static function dispatch(string $controller, string $action, array $params = [])
+    {
+        try {
+            $controller = '\App\Controllers\\'.$controller;
+            $rcls = new ReflectionClass($controller);
+            $method = $rcls->getMethod($action);
+            $mParams = $method->getParameters();
+            if (count($mParams) == count($params)) {
+                foreach ($mParams as $key=>$param) {
+                    var_dump($key, $param);
+                    if (!array_key_exists($param->getName(), $params)) {
+                        throw new \Exception('Incorrect params');
+                    }
+                }
+                $cls = new $controller();
+                return $controller->$action(...array_values($params));
+            }
+
+            throw new \Exception('Incorrect params');
+            var_dump($mParams);
+            //надо вызвать данный метод и передать в него параметры
+            echo "<pre>", $method, "</pre>";
+        } catch (\Exception $exception) {
+            var_dump($exception->getMessage());
+//            static::errorPage404();
+        };
+        var_dump($controller, $action, $params);
+
+
+//          1) существует ли контроллер?
+//          2) существует ли метод?
+//          3) готов ли этот метод принять параметры?
+
+        // через reflections надо проверить контроллер
+
+//        catch
+    }
+
+    static function errorPage404()
     {
         $host = 'http://'.$_SERVER['HTTP_HOST'].'/';
         header('HTTP/1.1 404 Not Found');

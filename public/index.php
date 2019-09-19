@@ -1,9 +1,8 @@
 <?php
 
-namespace routes;
+require_once '../app/controllers/UserController.php';
+require_once '../core/routering/Route.php';
 
-//echo $_SERVER['REQUEST_URI'];
 use core\routering\Route;
 
-require_once '../core/routering/Route.php';
-Route::start();
+Route::find();

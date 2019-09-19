@@ -1,8 +1,9 @@
 <?php
 return [
     '' => 'HomeController@index',
-    '/users' => 'UsersConroller@index',
-    '/users/edit/{id}' => 'UsersConroller@edit',
-    '/users/show/{id}' => 'UsersController@show',
-    '/users/show/{param}/{param2}' => 'UsersController@showParams'
+    '/users' => 'UserController@index',
+    '/users/delete/{id}' => 'UserController@delete',
+    '/users/edit/{id}' => 'UserController@edit',
+    '/users/show/{id}' => 'UserController@show',
+    '/users/show/{param}/{param2}' => 'UserController@showParams'
 ];
