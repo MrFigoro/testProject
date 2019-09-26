@@ -2,7 +2,7 @@
 
 namespace core\routering;
 
-use ReflectionClass;
+use ReflectionMethod;
 
 class Route
 {
@@ -30,7 +30,6 @@ class Route
                 }
             }
         }
-        var_dump($route);
         if (!is_null($route)) {
             $classAction = explode('@' ,$routes[$route]);
             if (count($classAction) == 2 ) {
@@ -59,38 +58,34 @@ class Route
     {
         try {
             $controller = '\App\Controllers\\'.$controller;
-            $rcls = new ReflectionClass($controller);
-            $method = $rcls->getMethod($action);
+            if (!class_exists($controller)) {
+                throw new \Exception('Controller not found');
+            }
+            $class = new $controller();
+            if (!method_exists($class, $action)) {
+                throw new \Exception('Action not found');
+            }
+
+            $method = new ReflectionMethod($class, $action);
             $mParams = $method->getParameters();
             if (count($mParams) == count($params)) {
-                foreach ($mParams as $key=>$param) {
-                    var_dump($key, $param);
+                foreach ($mParams as $param) {
                     if (!array_key_exists($param->getName(), $params)) {
                         throw new \Exception('Incorrect params');
                     }
                 }
-                $cls = new $controller();
-                return $controller->$action(...array_values($params));
+                return $class->$action(...array_values($params));
             }
-
             throw new \Exception('Incorrect params');
-            var_dump($mParams);
             //надо вызвать данный метод и передать в него параметры
-            echo "<pre>", $method, "</pre>";
         } catch (\Exception $exception) {
-            var_dump($exception->getMessage());
-//            static::errorPage404();
+            static::errorPage404();
         };
-        var_dump($controller, $action, $params);
-
 
 //          1) существует ли контроллер?
 //          2) существует ли метод?
 //          3) готов ли этот метод принять параметры?
 
-        // через reflections надо проверить контроллер
-
-//        catch
     }
 
     static function errorPage404()

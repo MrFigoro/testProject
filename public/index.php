@@ -5,4 +5,4 @@ require_once '../core/routering/Route.php';
 
 use core\routering\Route;
 
-Route::find();
+echo Route::find();
