@@ -4,13 +4,18 @@ namespace App\Controllers;
 
 class UserController
 {
+    public function all()
+    {
+        return 'UserController works hard';
+    }
+
     public function show(int $id)
     {
         return $id;
     }
 
-    public function showParams(string $param, string $param2)
+    public function showParam(string $param, string $param2)
     {
-        return "all right";
+        return $param.", ".$param2;
     }
 }

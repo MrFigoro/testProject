@@ -1,6 +1,6 @@
 <?php
 
-namespace core\routering;
+namespace Core\Routering;
 
 use ReflectionMethod;
 
@@ -36,7 +36,7 @@ class Route
                 return self::dispatch($classAction[0], $classAction[1], self::prepareParams($route, $currentURL));
             }
         }
-        return self::errorPage404();
+        self::errorPage404("This route is absent");
     }
 
     static function prepareParams(string $route, string $url)
@@ -77,23 +77,20 @@ class Route
                 return $class->$action(...array_values($params));
             }
             throw new \Exception('Incorrect params');
-            //надо вызвать данный метод и передать в него параметры
         } catch (\Exception $exception) {
-            static::errorPage404();
+            self::errorPage404($exception->getMessage());
         };
-
-//          1) существует ли контроллер?
-//          2) существует ли метод?
-//          3) готов ли этот метод принять параметры?
 
     }
 
-    static function errorPage404()
+    static function errorPage404(string $message)
     {
+        echo $message;
         $host = 'http://'.$_SERVER['HTTP_HOST'].'/';
         header('HTTP/1.1 404 Not Found');
         header("Status: 404 Not Found");
         header('Location:'.$host.'404');
+        header($message);
         die();
     }
 }
