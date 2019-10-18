@@ -2,11 +2,13 @@
 
 namespace App\Controllers;
 
-class UserController
+use Core\Controllers\Controller;
+
+class UserController extends Controller
 {
     public function all()
     {
-        return 'UserController works hard';
+        return $this->render('user', ['message' => 'All right!']);
     }
 
     public function show(int $id)
