@@ -3,6 +3,7 @@ return [
     '' => 'HomeController@index',
     '/users' => 'UserController@index',
     '/users/all' => 'UserController@all',
+    '/users/create' => 'UserController@create',
     '/users/delete/{id}' => 'UserController@delete',
     '/users/edit/{id}' => 'UserController@edit',
     '/users/show/{id}' => 'UserController@show',

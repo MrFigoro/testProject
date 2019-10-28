@@ -2,6 +2,7 @@
 
 namespace Core\Routering;
 
+use Core\Validation\Validator;
 use ReflectionMethod;
 
 class Route
@@ -51,7 +52,7 @@ class Route
         unset($el); //обязательно надо убирать более неиспользуемую переменную
         $values = array_diff($urlArray, $routeArray); //получил массив отличающихся значений
         $params = array_combine($keyV, $values); //получил массив - назв. параметра и полученное значение
-        return $params;
+        return $params;//['param'=>12, 'param2'=>12]
     }
 
     static function dispatch(string $controller, string $action, array $params = [])
@@ -68,12 +69,34 @@ class Route
 
             $method = new ReflectionMethod($class, $action);
             $mParams = $method->getParameters();
-            if (count($mParams) == count($params)) {
+//            var_dump($mParams);
+            $mParamsCount = 0;
+            $requestClass = null;
+            foreach ($mParams as $param) {
+                var_dump($param->hasType(), $param->getType()->getName());
+//                var_dump($param, $param->getClass()->getName());
+                //посчитать реальное кол-во параметров
+                if ($param->hasType() && !is_null($param->getClass()) ) {
+                    $requestClass = $param->getClass()->getName();
+                    continue;
+                }
+                $mParamsCount++;
+            }
+            if ($mParamsCount == count($params)) {
+                if (!is_null($requestClass)) {
+                    $request = new $requestClass();
+                    if ($request->validate()) {
+                        //вывести ошибки
+                    }
+                    $params[] = $request;
+                    exit;
+                }
                 foreach ($mParams as $param) {
                     if (!array_key_exists($param->getName(), $params)) {
                         throw new \Exception('Incorrect params');
                     }
                 }
+
                 return $class->$action(...array_values($params));
             }
             throw new \Exception('Incorrect params');

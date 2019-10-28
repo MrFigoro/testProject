@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use Core\Controllers\Controller;
+use App\Requests\UserRequest;
 
 class UserController extends Controller
 {
@@ -18,6 +19,11 @@ class UserController extends Controller
 
     public function showParam(string $param, string $param2)
     {
-        return $param.", ".$param2;
+        return $param." или ".$param2;
+    }
+
+    public function create(UserRequest $request)
+    {
+        return ('Created!!!' . $request['firstName']);
     }
 }
