@@ -40,7 +40,7 @@ class Request
             foreach ($rules[$key] as $rule) {
                 var_dump('The rule: '.$rule);
                 if (method_exists($this, $rule)) {
-                    if ($this->$rule($key) == 1) {
+                    if ($this->$rule($key)) {
                         break;
                     } else {
                         continue;
@@ -73,8 +73,9 @@ class Request
     {
         if (empty($this->data[$field])) {
             $this->setError($field, 'This field is required');
-            return 1;
+            return true;
         }
+        else return false;
     }
 
     public function string(string $field) : void
