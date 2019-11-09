@@ -2,7 +2,6 @@
 
 namespace Core\Routering;
 
-use Core\Validation\Validator;
 use ReflectionMethod;
 
 class Route
@@ -73,7 +72,7 @@ class Route
             $mParamsCount = 0;
             $requestClass = null;
             foreach ($mParams as $param) {
-                var_dump($param->hasType(), $param->getType()->getName());
+                var_dump($param->hasType(), $param->getType()->getName(), $param->getClass());
 //                var_dump($param, $param->getClass()->getName());
                 //посчитать реальное кол-во параметров
                 if ($param->hasType() && !is_null($param->getClass()) ) {
