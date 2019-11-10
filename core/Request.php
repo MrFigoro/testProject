@@ -33,31 +33,24 @@ class Request
 
     public function validate()
     {
-        $rules = $this->getRules();
-        $keyRules = array_keys($rules);
-        foreach ($keyRules as $key) {
-            var_dump('The pole: '. $key);
-            foreach ($rules[$key] as $rule) {
-                var_dump('The rule: '.$rule);
-                if (method_exists($this, $rule)) {
-                    if ($this->$rule($key)) {
-                        break;
-                    } else {
-                        continue;
-                    }
-                }
-                $ruleValue = explode(':', $rule);
-                if (count($ruleValue) == 2) {
-                    if (method_exists($this, $ruleValue[0])) {
-                        $func = $ruleValue[0];
-                        $this->$func($key, $ruleValue[1]);
-                        continue;
-                    }
-                    var_dump('The method "'.$ruleValue[0].'" don\'t exist');
+        foreach ($this->getRules() as $field => $rules) {
+            if (in_array('required', $rules)) {
+                unset($rules[array_search('required', $rules)]);
+                if (!$this->required($field)) {
                     continue;
                 }
-                var_dump('The method "'.$rule.'" don\'t exist');
-                continue;
+            }
+            foreach ($rules as $rule) {
+                if (method_exists($this, $rule)) {
+                    $this->$rule($field);
+                } else {
+                    $ruleValue = explode(':', $rule);
+                    if (count($ruleValue) == 2) {
+                        if (method_exists($this, $ruleValue[0])) {
+                            $this->{$ruleValue[0]}($field, $ruleValue[1]);
+                        }
+                    }
+                }
             }
         }
         var_dump($this->errors);
@@ -69,13 +62,13 @@ class Request
         $this->errors[$field][] = $error;
     }
 
-    public function required(string $field)
+    public function required(string $field) : bool
     {
         if (empty($this->data[$field])) {
             $this->setError($field, 'This field is required');
-            return true;
+            return false;
         }
-        else return false;
+        return true;
     }
 
     public function string(string $field) : void
@@ -87,22 +80,22 @@ class Request
 
     public function email(string $field) : void
     {
-        if (!filter_var($field, FILTER_VALIDATE_EMAIL)) {
+        if (!filter_var($this->data[$field], FILTER_VALIDATE_EMAIL)) {
             $this->setError($field, 'This field must be like email');
         }
     }
 
     public function maxLength(string $field, int $maxLength) : void
     {
-        if (strlen($field) > $maxLength) {
-            $this->setError($field, 'The length of the field have to be less than '. $maxLength);
+        if (strlen($this->data[$field]) > $maxLength) {
+            $this->setError($field, 'The length of the field('.strlen($this->data[$field]).') have to be less than '. $maxLength);
         }
     }
 
     public function minLength(string $field, int $minLength) : void
     {
-        if (strlen($field) < $minLength) {
-            $this->setError($field, 'The length of the field have to be more than '. $minLength);
+        if (strlen($this->data[$field]) < $minLength) {
+            $this->setError($field, 'The length of the field('.strlen($this->data[$field]).') have to be more than '. $minLength);
         }
     }
 }

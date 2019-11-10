@@ -9,9 +9,9 @@ class UserRequest extends Request
     public function getRules()
     {
         return [
-            'firstName' => ['required', 'string', 'maxLength:40'],
-            'lastName' => ['required', 'string', 'maxLength:40'],
-            'email' => ['required', 'string', 'email', 'maxLength:255', 'unique:users'],
+            'firstName' => ['required', 'string', 'minLength:2', 'maxLength:40'],
+            'lastName' => ['required', 'string', 'minLength:2', 'maxLength:40'],
+            'email' => ['required', 'email', 'maxLength:255'],
             'password' => ['required', 'string', 'minLength:5'],
         ];
     }
